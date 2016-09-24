@@ -161,39 +161,66 @@ func ({{ $short }} *{{ .Name }}) Delete(db XODB) error {
 	return nil
 }
 
+////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// Querify gen - ME /////////////////////////////////////////
+//.Name = table name
 {{- $deleterType := printf "__%s_Deleter" .Name }}
+{{- $updaterType := printf "__%s_Updater" .Name }}
+{{- $selectorType := printf "__%s_Selecter" .Name }}
 {{- $updater := printf "__%s_Updater" .Name }}
 {{ $ms_gen_types := ms_gen_types }} // _Deleter, _Updater
 
+// orma types
+type {{ $deleterType }} struct {
+	wheres   []whereClause
+    whereSep string
+}
+
+type {{ $updaterType }} struct {
+	wheres   []whereClause
+	updates   map[string]interface{}
+    whereSep string
+}
+
+type {{ $selectorType }} struct {
+    wheres   []whereClause
+    selects  []string
+    whereSep  string
+    orderBy string//" order by id desc //for ints
+    limit int
+    offset int
+}
+
+func New{{ .Name }}__Deleter()  *{{ $deleterType }} {
+	    d := {{ $deleterType }} {whereSep: " AND "}
+	    return &d
+}
+
+func New{{ .Name }}__Updater()  *{{ $updaterType }} {
+	    u := {{ $updaterType }} {whereSep: " AND "}
+	    u.updates =  make(map[string]interface{},10)
+	    return &u
+}
+
+func New{{ .Name }}_Selecter()  *{{ $selectorType }} {
+	    u := {{ $selectorType }} {whereSep: " AND "}
+	    return &u
+}
+
 {{- range $ms_gen_types }}
 	{{ $operationType := printf "%s_%s" $type . }}
-	type {{ $operationType }} struct {
-		wheres   []whereClause
-	    whereSep string
-	}
-
 	func New{{ $operationType }}()  *{{ . }} {
 	    d := {{ $operationType }} {whereSep: " AND "}
 	    return &d
 	}
 
-{{ end }}
+{{- end }}
 
 
 //varibles init
 {{- $colName := "%%" }}
-{{ $deleterType := "%%" }}
+
 /////////////// int - gens - ME ////////////////
-{{- range .Fields }}
-
-	{{if eq .Type "string"}}
-	func (d *{{ $type }}) {{ .Name }}__STRINGY(db {{.Type}}) {
-		d.Params[{{.Name}}] = db
-	}
-	{{end}}
-
-{{- end }}
 
 {{- $dels := ms_deleter }}
 {{- $ms_in := ms_in }}
@@ -201,54 +228,60 @@ func ({{ $short }} *{{ .Name }}) Delete(db XODB) error {
 {{- range .Fields }}
 	
 	{{- $colName := .Col.ColumnName }}
+	{{- $colType := .Type }}
 
-	{{if (eq .Type "int") or (eq .Type "int64") }}
+	{{- range $ms_gen_types }}
+		{{- $deleterType :=  printf "%s_%s" $type .  }}
+
+		{{- if (eq $colType "int") or (eq $colType "int64") -}}
 		
-		func (u *{{$deleterType}}){{ $colName }}_In (ins []int) *{{$deleterType}} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
+func (u *{{$deleterType}}){{ $colName }}_In (ins []int) *{{$deleterType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
 
-		    return u
-		}
+    return u
+}
 
-		func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []int) *{{$deleterType}} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
+func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []int) *{{$deleterType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
 
-		    return u
-		}
+    return u
+}
 
-		{{ $Name := .Name}}
-		{{ with $dels }}
-			{{ range  .  }}
+			{{- with $dels }}
+				{{- range  .  }}
 
-				func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$deleterType}} {
-				    w := whereClause{}
-				    var insWhere []interface{}
-				    insWhere = append(insWhere,val)
-				    w.args = insWhere
-				    w.condition = " {{ $colName }} {{.Condiation}} ? "
-				    d.wheres = append(d.wheres, w)
-				    	
-				    return d
-				}
-
+func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$deleterType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+				{{ end }}
 			{{- end }}
-		{{- end }}
 		
-	{{end}}
+		{{- end}}
+
+
+	{{- end }}
+
 
 {{- end }}
 

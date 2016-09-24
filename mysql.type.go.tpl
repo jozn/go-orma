@@ -164,81 +164,26 @@ func ({{ $short }} *{{ .Name }}) Delete(db XODB) error {
 ///////////////////////////// Querify gen - ME /////////////////////////////////////////
 {{- $deleterType := printf "__%s_Deleter" .Name }}
 {{- $updater := printf "__%s_Updater" .Name }}
+{{ $ms_gen_types := ms_gen_types }} // _Deleter, _Updater
+
+{{- range $ms_gen_types }}
+	{{ $operationType := printf "%s_%s" $type . }}
+	type {{ $operationType }} struct {
+		wheres   []whereClause
+	    whereSep string
+	}
+
+	func New{{ $operationType }}()  *{{ . }} {
+	    d := {{ $operationType }} {whereSep: " AND "}
+	    return &d
+	}
+
+{{ end }}
 
 
-type {{ $deleterType }} struct {
-	wheres   []whereClause
-    whereSep string
-}
-
-func New{{ $type }}_Deleter()  *{{ $deleterType }} {
-    d := {{ $deleterType }} {whereSep: " AND "}
-    return &d
-}
-
-///////////////// Block ////////////////////////
 //varibles init
-{{- $colName := "%%%%%%%%%%%" }}
+{{- $colName := "%%" }}
 {{ $deleterType := "%%" }}
-{{ $ms_gen_types := ms_gen_types() }}
-
-{{block "where" . }}
-	
-	{{if (eq .Type "int") or (eq .Type "int64") }}
-		
-		func (u *{{ $deleterType }}){{ $colName }}_In (ins []int) *{{ $deleterType }} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
-
-		    return u
-		}
-
-		func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []int) *{{$deleterType}} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
-
-		    return u
-		}
-
-		{{ $Name := .Name}}
-		{{ with $dels }}
-			{{ range  .  }}
-
-				func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$deleterType}} {
-				    w := whereClause{}
-				    var insWhere []interface{}
-				    insWhere = append(insWhere,val)
-				    w.args = insWhere
-				    w.condition = " {{ $colName }} {{.Condiation}} ? "
-				    d.wheres = append(d.wheres, w)
-				    	
-				    return d
-				}
-
-			{{- end }}
-		{{- end }}
-		
-	{{end}}
-
-{{- end }}
-
-
-
-
-////////////// End Block ///////////////////////
-
 /////////////// int - gens - ME ////////////////
 {{- range .Fields }}
 
@@ -255,7 +200,7 @@ func New{{ $type }}_Deleter()  *{{ $deleterType }} {
 ////////ints
 {{- range .Fields }}
 	
-	{{- $colName = .Col.ColumnName }}
+	{{- $colName := .Col.ColumnName }}
 
 	{{if (eq .Type "int") or (eq .Type "int64") }}
 		

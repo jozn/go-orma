@@ -191,12 +191,12 @@ type {{ $selectorType }} struct {
     offset int
 }
 
-func New{{ .Name }}__Deleter()  *{{ $deleterType }} {
+func New{{ .Name }}_Deleter()  *{{ $deleterType }} {
 	    d := {{ $deleterType }} {whereSep: " AND "}
 	    return &d
 }
 
-func New{{ .Name }}__Updater()  *{{ $updaterType }} {
+func New{{ .Name }}_Updater()  *{{ $updaterType }} {
 	    u := {{ $updaterType }} {whereSep: " AND "}
 	    u.updates =  make(map[string]interface{},10)
 	    return &u
@@ -207,35 +207,23 @@ func New{{ .Name }}_Selecter()  *{{ $selectorType }} {
 	    return &u
 }
 
-{{- range $ms_gen_types }}
-	{{ $operationType := printf "%s_%s" $type . }}
-	func New{{ $operationType }}()  *{{ . }} {
-	    d := {{ $operationType }} {whereSep: " AND "}
-	    return &d
-	}
 
-{{- end }}
-
-
-//varibles init
-{{- $colName := "%%" }}
-
-/////////////// int - gens - ME ////////////////
-
-{{- $dels := ms_deleter }}
+{{- $ms_cond_list := ms_deleter }}
 {{- $ms_in := ms_in }}
-////////ints
-{{- range .Fields }}
+{{- $Fields := .Fields }}
+/////////////////////////////// Where for all /////////////////////////////
+//// for ints all selecter updater, deleter
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
 	
-	{{- $colName := .Col.ColumnName }}
-	{{- $colType := .Type }}
-
-	{{- range $ms_gen_types }}
-		{{- $deleterType :=  printf "%s_%s" $type .  }}
-
-		{{- if (eq $colType "int") or (eq $colType "int64") -}}
-		
-func (u *{{$deleterType}}){{ $colName }}_In (ins []int) *{{$deleterType}} {
+				{{- if (eq $colType "int") or (eq $colType "int64") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []int) *{{$operationType}} {
     w := whereClause{}
     var insWhere []interface{}
     for _, i:= range ins {
@@ -248,7 +236,7 @@ func (u *{{$deleterType}}){{ $colName }}_In (ins []int) *{{$deleterType}} {
     return u
 }
 
-func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []int) *{{$deleterType}} {
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []int) *{{$operationType}} {
     w := whereClause{}
     var insWhere []interface{}
     for _, i:= range ins {
@@ -261,10 +249,10 @@ func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []int) *{{$deleterType}} {
     return u
 }
 
-			{{- with $dels }}
-				{{- range  .  }}
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
 
-func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$deleterType}} {
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$operationType}} {
     w := whereClause{}
     var insWhere []interface{}
     insWhere = append(insWhere,val)
@@ -274,78 +262,440 @@ func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$deleterType
     	
     return d
 }
-				{{ end }}
-			{{- end }}
-		
-		{{- end}}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
 
-
-	{{- end }}
-
-
-{{- end }}
-
-////////strings
-{{- range .Fields }}
-
-	{{- $colName := .Col.ColumnName }}
-
-	{{if (eq .Type "string")}}
-		
-		func (u *{{$deleterType}}){{ $colName }}_In (ins []string) *{{$deleterType}} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
-
-		    return u
-		}
-
-		func (u *{{$deleterType}}){{ $colName }}_NotIn (ins []string) *{{$deleterType}} {
-		    w := whereClause{}
-		    var insWhere []interface{}
-		    for _, i:= range ins {
-		        insWhere = append(insWhere,i)
-		    }
-		    w.args = insWhere
-		    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
-		    u.wheres = append(u.wheres, w)
-
-		    return u
-		}
-
-		{{ $Name := .Name}}
-		{{ with $dels }}
-			{{ range  .  }}
-
-				func (d *{{$deleterType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$deleterType}} {
-				    w := whereClause{}
-				    var insWhere []interface{}
-				    insWhere = append(insWhere,val)
-				    w.args = insWhere
-				    w.condition = " {{ $colName }} {{.Condiation}} ? "
-				    d.wheres = append(d.wheres, w)
-				    	
-				    return d
-				}
-
-			{{- end }}
 		{{- end }}
-		
-	{{end}}
 
-{{- end }}
+{{ end }}
+
+
+///// for strings //copy of above with type int -> string + rm if eq
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "string") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+/// End of wheres for selectors , updators, deletor
+
+/// for updater
+//// for ints all selecter updater, deleter
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "int") or (eq $colType "int64") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+
+
+///// for strings //copy of above with type int -> string + rm if eq
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "string") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+//// for ints all selecter updater, deleter
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "int") or (eq $colType "int64") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+
+
+///// for strings //copy of above with type int -> string + rm if eq
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "string") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+
+/////////////////////////////// Updater /////////////////////////////
+//// for ints all selecter updater, deleter
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "int") or (eq $colType "int64") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
+
+
+///// for strings //copy of above with type int -> string + rm if eq
+{{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
+		{{ $operationType := . }}
+			////////ints
+		{{- range $Fields }}
+			
+			{{- $colName := .Col.ColumnName }}
+			{{- $colType := .Type }}
+	
+				{{- if (eq $colType "string") }}
+				
+func (u *{{$operationType}}) {{ $colName }}_In (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+func (u *{{$operationType}}) {{ $colName }}_NotIn (ins []string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    for _, i:= range ins {
+        insWhere = append(insWhere,i)
+    }
+    w.args = insWhere
+    w.condition = " {{ $colName }} NOT IN("+helper.DbQuestionForSqlIn(len(ins))+") "
+    u.wheres = append(u.wheres, w)
+
+    return u
+}
+
+					{{- with $ms_cond_list }}
+						{{- range  .  }}
+
+func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operationType}} {
+    w := whereClause{}
+    var insWhere []interface{}
+    insWhere = append(insWhere,val)
+    w.args = insWhere
+    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    d.wheres = append(d.wheres, w)
+    	
+    return d
+}
+						{{- end }}
+					{{- end }}
+				
+				{{- end }}
+
+		{{- end }}
+
+{{ end }}
 
 
 func (d *{{$deleterType}})Delete (db XODB) (int,error) {
     var err error
     var wheresArr []string
     for _,w := range d.wheres{
-        wheresArr = append(wheresArr,d.condition)
+        wheresArr = append(wheresArr,w.condition)
     }
     wheresStr := strings.Join(wheresArr, d.whereSep)
 

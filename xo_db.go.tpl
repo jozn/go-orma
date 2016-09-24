@@ -72,7 +72,7 @@ type Slice []ScannerValuer
 
 ////////////// ME /////////////
 type whereClause struct  {
-    condiaction string
+    condition string
     args        []interface{}
 }
 

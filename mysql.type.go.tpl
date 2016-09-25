@@ -166,7 +166,7 @@ func ({{ $short }} *{{ .Name }}) Delete(db XODB) error {
 //.Name = table name
 {{- $deleterType := printf "__%s_Deleter" .Name }}
 {{- $updaterType := printf "__%s_Updater" .Name }}
-{{- $selectorType := printf "__%s_Selecter" .Name }}
+{{- $selectorType := printf "__%s_Selector" .Name }}
 {{- $updater := printf "__%s_Updater" .Name }}
 {{ $ms_gen_types := ms_gen_types }} // _Deleter, _Updater
 
@@ -202,18 +202,18 @@ func New{{ .Name }}_Updater()  *{{ $updaterType }} {
 	    return &u
 }
 
-func New{{ .Name }}_Selecter()  *{{ $selectorType }} {
+func New{{ .Name }}_Selector()  *{{ $selectorType }} {
 	    u := {{ $selectorType }} {whereSep: " AND ",selectCol: "*"}
 	    return &u
 }
 
 
-{{- $ms_cond_list := ms_deleter }}
+{{- $ms_cond_list := ms_conds }}
 {{- $ms_str_cond := ms_str_cond }}
 {{- $ms_in := ms_in }}
 {{- $Fields := .Fields }}
 /////////////////////////////// Where for all /////////////////////////////
-//// for ints all selecter updater, deleter
+//// for ints all selector updater, deleter
 {{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
 		{{ $operationType := . }}
 			////////ints
@@ -258,7 +258,7 @@ func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val int) *{{$operation
     var insWhere []interface{}
     insWhere = append(insWhere,val)
     w.args = insWhere
-    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    w.condition = " {{ $colName }} {{.Condition}} ? "
     d.wheres = append(d.wheres, w)
     	
     return d
@@ -330,7 +330,7 @@ func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operat
     var insWhere []interface{}
     insWhere = append(insWhere,val)
     w.args = insWhere
-    w.condition = " {{ $colName }} {{.Condiation}} ? "
+    w.condition = " {{ $colName }} {{.Condition}} ? "
     d.wheres = append(d.wheres, w)
     	
     return d
@@ -410,7 +410,7 @@ func (u *{{$selectorType}}) Offset(num int) *{{$selectorType}} {
 }
 
 
-/////////////////////////  Queryer //////////////////////////////////
+/////////////////////////  Queryer Selector  //////////////////////////////////
 func (u *{{$selectorType}})_stoSql ()  (string,[]interface{}) {
 	sqlWherrs, whereArgs := whereClusesToSql(u.wheres,u.whereSep)
 
@@ -466,6 +466,41 @@ func (u *{{$selectorType}})GetAll (db sqlx.DB) ([]{{ $typ }},error) {
 	return rows, nil
 }
 
+func (u *{{$selectorType}})GetStringSlice (db sqlx.DB) ([]string,error) {
+	var err error
+	
+	sqlstr, whereArgs := u._stoSql()
+	
+	XOLog(sqlstr,whereArgs )
+
+	var rows []string
+	//by Sqlx
+	err = db.Select(rows ,sqlstr, whereArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+func (u *{{$selectorType}})GetIntSlice (db sqlx.DB) ([]int,error) {
+	var err error
+	
+	sqlstr, whereArgs := u._stoSql()
+	
+	XOLog(sqlstr,whereArgs )
+
+	var rows []int
+	//by Sqlx
+	err = db.Select(rows ,sqlstr, whereArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+
+/////////////////////////  Queryer Update Delete //////////////////////////////////
 func (u *{{$updaterType}})Update (db XODB) (int,error) {
     var err error
 
@@ -536,7 +571,7 @@ func (d *{{$deleterType}})Delete (db XODB) (int,error) {
 			{{- $colName := .Col.ColumnName }}
 			{{- $colType := .Type }}
 
-			// {{ $colType }} {{ $colName }}
+			// {{- /* $colType }} {{ $colName */}}
 
 {{- end}}
 

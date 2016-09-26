@@ -10,7 +10,9 @@ type XODB interface {
 
 // XOLog provides the log func used by generated queries.
 var XOLog = func(strings ...interface{}) {
-	fmt.Println(strings...)
+	if DEBUG {
+		fmt.Println(strings...)
+	}
  }
 
 // ScannerValuer is the common interface for types that implement both the

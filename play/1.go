@@ -7,6 +7,7 @@ import (
 )
 
 var DB *sqlx.DB
+const DEBUG = false
 
 func main() {
 	var err error

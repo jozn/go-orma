@@ -10,6 +10,8 @@ import (
     "io/ioutil"
 )
 
+
+
 //var DB *sqlx.DB
 func load() {
 	var err error
@@ -257,6 +259,59 @@ func TestDeleteAll_NO(t *testing.T) {
         //t.Logf("update count = %d, %v",r, z)
     }
 }
+
+////////////////////// Benchmarks //////////////////////
+func BenchmarkSelectSingleRow(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        UserById(DB,rand.Intn(80))
+    }
+}
+
+func BenchmarkSelectSingleHand(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        getUser()
+    }
+}
+
+func BenchmarkSelectSingSqlx(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        getUserSqlx()
+    }
+}
+
+func BenchmarkSelectSingleRow_Tag(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        TagById(DB,rand.Intn(40))
+    }
+}
+
+func BenchmarkSelectSingleHand_Tag(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        DB.QueryRow("select * frrom tags where Id = ? ",rand.Intn(40))
+    }
+}
+
+func BenchmarkSelectSingSqlx_Tag(b *testing.B) {
+    b.ResetTimer()
+    for i:=0 ;i< b.N; i++{
+        DB.QueryRow("select * frrom tags where Id = ? ",rand.Intn(40))
+    }
+}
+
+func getUser() {
+   DB.QueryRow("select * frrom user where Id = ? ",rand.Intn(80))
+}
+
+func getUserSqlx() {
+    DB.Get(&User{},"select * frrom user where Id = ? ",rand.Intn(80))
+}
+
+
 
 func insrtComment(num int) {
 	for i := 1; i < num; i++ {

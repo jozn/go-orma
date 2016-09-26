@@ -1,0 +1,19 @@
+ME:::::::Tes
+SELECT * FROM ms_test.comments WHERE  Id < ?  [100]
+SELECT * FROM ms_test.tags []
+SELECT * FROM ms_test.tags []
+SELECT * FROM ms_test.tags LIMIT 2 OFFSET 0 []
+SELECT Name FROM ms_test.tags []
+SELECT Name FROM ms_test.tags WHERE  Id < ?  [10]
+SELECT * FROM ms_test.tags ORDER BY Id DESC  []
+SELECT * FROM ms_test.tags LIMIT 10 OFFSET 0 []
+SELECT * FROM ms_test.tags ORDER BY Id ASC  LIMIT 10 OFFSET 0 []
+SELECT * FROM ms_test.tags ORDER BY Count DESC  LIMIT 10 OFFSET 0 []
+SELECT * FROM ms_test.tags ORDER BY Count DESC  LIMIT 10 OFFSET 10 []
+SELECT Name FROM ms_test.tags ORDER BY Count DESC  LIMIT 10 OFFSET 10 []
+SELECT Name FROM ms_test.tags WHERE  Id = ?  [10]
+--- FAIL: TestSelectColumnWith_Eq (0.00s)
+	sql_test.go:149: faild <nil>
+FAIL
+exit status 1
+FAIL	ms/libs/go-orma/play	0.053s

@@ -378,6 +378,7 @@ func (u *{{$updaterType}}){{ $colName }} (newVal string) *{{$updaterType}} {
 /////////////////////// Selector ///////////////////////////////////
 {{ $operationType := $selectorType }}
 
+//Select_* can just be used with: .GetString() , .GetStringSlice(), .GetInt() ..GetIntSlice()
 {{- range $Fields }}
 			
 	{{- $colName := .Col.ColumnName }}
@@ -416,8 +417,10 @@ func (u *{{$selectorType}})_stoSql ()  (string,[]interface{}) {
 
 	sqlstr := "SELECT " +u.selectCol +" FROM {{ $table }}" 
 
-	sqlstr += sqlWherrs
-
+	if len( strings.Trim(sqlWherrs," ") ) > 0 {//2 for safty
+		sqlstr += " WHERE "+ sqlWherrs
+	}
+	
 	if u.orderBy != ""{
         sqlstr += u.orderBy
     }
@@ -432,7 +435,7 @@ func (u *{{$selectorType}})_stoSql ()  (string,[]interface{}) {
     return sqlstr,whereArgs
 }
 
-func (u *{{$selectorType}})Get (db sqlx.DB) (*{{ $typ }},error) {
+func (u *{{$selectorType}}) GetRow (db *sqlx.DB) (*{{ $typ }},error) {
 	var err error
 	
 	sqlstr, whereArgs := u._stoSql()
@@ -441,7 +444,7 @@ func (u *{{$selectorType}})Get (db sqlx.DB) (*{{ $typ }},error) {
 
 	row := &{{$typ}}{}
 	//by Sqlx
-	err = db.Get(row ,sqlstr, whereArgs)
+	err = db.Get(row ,sqlstr, whereArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -449,7 +452,7 @@ func (u *{{$selectorType}})Get (db sqlx.DB) (*{{ $typ }},error) {
 	return row, nil
 }
 
-func (u *{{$selectorType}})GetAll (db sqlx.DB) ([]{{ $typ }},error) {
+func (u *{{$selectorType}}) GetRows (db *sqlx.DB) ([]{{ $typ }},error) {
 	var err error
 	
 	sqlstr, whereArgs := u._stoSql()
@@ -458,7 +461,7 @@ func (u *{{$selectorType}})GetAll (db sqlx.DB) ([]{{ $typ }},error) {
 
 	var rows []{{$typ}}
 	//by Sqlx
-	err = db.Select(rows ,sqlstr, whereArgs)
+	err = db.Unsafe().Select(&rows ,sqlstr, whereArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -466,7 +469,24 @@ func (u *{{$selectorType}})GetAll (db sqlx.DB) ([]{{ $typ }},error) {
 	return rows, nil
 }
 
-func (u *{{$selectorType}})GetStringSlice (db sqlx.DB) ([]string,error) {
+func (u *{{$selectorType}}) GetString (db *sqlx.DB) (string,error) {
+	var err error
+	
+	sqlstr, whereArgs := u._stoSql()
+	
+	XOLog(sqlstr,whereArgs )
+
+	var res string
+	//by Sqlx
+	err = db.Get(&res ,sqlstr, whereArgs...)
+	if err != nil {
+		return "", err
+	}
+
+	return res, nil
+}
+
+func (u *{{$selectorType}}) GetStringSlice (db *sqlx.DB) ([]string,error) {
 	var err error
 	
 	sqlstr, whereArgs := u._stoSql()
@@ -475,7 +495,7 @@ func (u *{{$selectorType}})GetStringSlice (db sqlx.DB) ([]string,error) {
 
 	var rows []string
 	//by Sqlx
-	err = db.Select(rows ,sqlstr, whereArgs)
+	err = db.Select(&rows ,sqlstr, whereArgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -483,7 +503,7 @@ func (u *{{$selectorType}})GetStringSlice (db sqlx.DB) ([]string,error) {
 	return rows, nil
 }
 
-func (u *{{$selectorType}})GetIntSlice (db sqlx.DB) ([]int,error) {
+func (u *{{$selectorType}}) GetIntSlice (db *sqlx.DB) ([]int,error) {
 	var err error
 	
 	sqlstr, whereArgs := u._stoSql()
@@ -492,12 +512,29 @@ func (u *{{$selectorType}})GetIntSlice (db sqlx.DB) ([]int,error) {
 
 	var rows []int
 	//by Sqlx
-	err = db.Select(rows ,sqlstr, whereArgs)
+	err = db.Select(&rows ,sqlstr, whereArgs...)
 	if err != nil {
 		return nil, err
 	}
 
 	return rows, nil
+}
+
+func (u *{{$selectorType}}) GetInt (db *sqlx.DB) (int,error) {
+	var err error
+	
+	sqlstr, whereArgs := u._stoSql()
+	
+	XOLog(sqlstr,whereArgs )
+
+	var res int
+	//by Sqlx
+	err = db.Get(&res ,sqlstr, whereArgs...)
+	if err != nil {
+		return 0, err
+	}
+
+	return res, nil
 }
 
 /////////////////////////  Queryer Update Delete //////////////////////////////////

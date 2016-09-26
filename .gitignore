@@ -26,3 +26,4 @@ _testmain.go
 .idea
 
 /play/gen_sql.go
+/play/.idea

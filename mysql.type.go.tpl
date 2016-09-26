@@ -555,7 +555,11 @@ func (u *{{$updaterType}})Update (db XODB) (int,error) {
     allArgs = append(allArgs, updateArgs...)
     allArgs = append(allArgs, whereArgs...)
 
-    sqlstr := `UPDATE {{ $table }} SET ` + sqlUpdate +" WHERE " +sqlWherrs
+    sqlstr := `UPDATE {{ $table }} SET ` + sqlUpdate 
+
+    if len( strings.Trim(sqlWherrs," ") ) > 0 {//2 for safty
+		sqlstr += " WHERE " +sqlWherrs
+	}
 
     XOLog(sqlstr,allArgs)
     res, err := db.Exec(sqlstr, allArgs...)

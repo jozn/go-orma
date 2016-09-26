@@ -7,6 +7,7 @@ import (
 	"ms/sun/helper"
 	"testing"
     "math/rand"
+    "io/ioutil"
 )
 
 //var DB *sqlx.DB
@@ -17,6 +18,13 @@ func load() {
 	if err != nil {
 		panic("DB")
 	}
+
+    //insert data
+    sql,err:= ioutil.ReadFile("test_data_tags.sql")
+    if err != nil {
+        panic("reading sql tag data faild.")
+    }
+    DB.Exec(string(sql))
 }
 
 func TestInsert(t *testing.T) {
@@ -202,10 +210,53 @@ func TestUpdaterInsString(t *testing.T) {
     if err != nil || r < 0 || e != nil || z.Count != rnd{
         t.Error("faild", err)
     } else {
-        t.Logf("update count = %d, %v",r, z)
+        t.Logf("update count = %d",r)
     }
 }
 
+func TestUpdaterAll(t *testing.T) {
+    r, err := NewTag_Updater().IsBlocked(2).Update(DB)
+    z,e:=TagById(DB,1)
+    if err != nil || r < 0 || e != nil || z.IsBlocked != 2{
+        t.Error("faild", err)
+    } else {
+        //t.Logf("update count = %d, %v",r, z)
+    }
+}
+
+///////////////// Deleter ////////////////
+// deleter don't support queryies without where for safety
+
+func TestDeleteInsInt(t *testing.T) {
+    ins:= []int{11,12,13,14,15}
+    r, err := NewTag_Deleter().Id_In(ins).Count_LT(300).Delete(DB)
+    z,e:=TagById(DB,13)
+    if err != nil || r < 0 || e != nil || z.Id < 1{
+        t.Error("faild", err)
+    } else {
+        //t.Logf("update count = %d, %v",r, z)
+    }
+}
+
+func TestDeleteId(t *testing.T) {
+    r, err := NewTag_Deleter().Id_EQ(20).Delete(DB)
+    z,e:=TagById(DB,13)
+    if err != nil || r < 0 || e != nil || z.Id < 1{
+        t.Error("faild", err)
+    } else {
+        //t.Logf("update count = %d, %v",r, z)
+    }
+}
+
+func TestDeleteAll_NO(t *testing.T) {
+    r, err := NewTag_Deleter().Delete(DB)
+    z,e:=TagById(DB,13)
+    if err == nil || r > 0 || e != nil || z.Id < 1{
+        t.Error("faild", err)
+    } else {
+        //t.Logf("update count = %d, %v",r, z)
+    }
+}
 
 func insrtComment(num int) {
 	for i := 1; i < num; i++ {

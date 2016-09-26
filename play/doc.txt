@@ -1,0 +1,1 @@
+xo mysql://root:123456@localhost:3307/ms_test --single-file --template-path C:\Go\_gopath\src\ms\libs\go-orma --out "gen_sql.go" --suffix go --schema "" --package main

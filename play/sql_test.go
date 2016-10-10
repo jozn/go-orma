@@ -3,14 +3,12 @@ package main_test
 import (
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"io/ioutil"
+	"math/rand"
 	. "ms/libs/go-orma/play"
 	"ms/sun/helper"
 	"testing"
-    "math/rand"
-    "io/ioutil"
 )
-
-
 
 //var DB *sqlx.DB
 func load() {
@@ -21,12 +19,12 @@ func load() {
 		panic("DB")
 	}
 
-    //insert data
-    sql,err:= ioutil.ReadFile("test_data_tags.sql")
-    if err != nil {
-        panic("reading sql tag data faild.")
-    }
-    DB.Exec(string(sql))
+	//insert data
+	sql, err := ioutil.ReadFile("test_data_tags.sql")
+	if err != nil {
+		panic("reading sql tag data faild.")
+	}
+	DB.Exec(string(sql))
 }
 
 func TestInsert(t *testing.T) {
@@ -172,146 +170,165 @@ func TestSelectColumnWith_Eq_String(t *testing.T) {
 }
 
 func TestSelectFullPlay1(t *testing.T) {
-    ins:= []int{1,2,3,4,5}
-    r, err := NewTag_Selector().Id_In(ins).CreatedTime_GE(125).GetRows(DB)
-    if err != nil || len(r) == 0 {
-        t.Error("faild", err)
-    } else {
-        t.Logf("len = %d",len(r))
-    }
+	ins := []int{1, 2, 3, 4, 5}
+	r, err := NewTag_Selector().Id_In(ins).CreatedTime_GE(125).GetRows(DB)
+	if err != nil || len(r) == 0 {
+		t.Error("faild", err)
+	} else {
+		t.Logf("len = %d", len(r))
+	}
 }
 
 func TestSelectInsAndSelectName(t *testing.T) {
-    ins:= []int{1,2,3,4,5}
-    r, err := NewTag_Selector().Select_Name().Id_In(ins).CreatedTime_GE(125).GetStringSlice(DB)
-    if err != nil || len(r) == 0 {
-        t.Error("faild", err)
-    } else {
-        t.Logf("len = %d, ",len(r))
-    }
+	ins := []int{1, 2, 3, 4, 5}
+	r, err := NewTag_Selector().Select_Name().Id_In(ins).CreatedTime_GE(125).GetStringSlice(DB)
+	if err != nil || len(r) == 0 {
+		t.Error("faild", err)
+	} else {
+		t.Logf("len = %d, ", len(r))
+	}
 }
 
 ///////////////////// Upadter ///////////////////////
 func TestUpdaterInsInt(t *testing.T) {
-    ins:= []int{1,2,3,4,5}
-    rnd:=rand.Intn(100000)
-    r, err := NewTag_Updater().Count(rnd).Id_In(ins).CreatedTime_GE(125).Update(DB)
-    z,e:=TagById(DB,1)
-    if err != nil || r < 0 || e != nil || z.Count != rnd{
-        t.Error("faild", err)
-    } else {
-        t.Logf("update count = %d, %v",r, z)
-    }
+	ins := []int{1, 2, 3, 4, 5}
+	rnd := rand.Intn(100000)
+	r, err := NewTag_Updater().Count(rnd).Id_In(ins).CreatedTime_GE(125).Update(DB)
+	z, e := TagById(DB, 1)
+	if err != nil || r < 0 || e != nil || z.Count != rnd {
+		t.Error("faild", err)
+	} else {
+		t.Logf("update count = %d, %v", r, z)
+	}
 }
 
 func TestUpdaterInsString(t *testing.T) {
-    ins:= []string{"آتش‌سوزی","انسان","شده","MicroTugs"}
-    rnd:=rand.Intn(100000)
-    r, err := NewTag_Updater().Name_In(ins).Count(rnd).CreatedTime_GE(125).Update(DB)
-    z,e:=TagById(DB,1)
-    if err != nil || r < 0 || e != nil || z.Count != rnd{
-        t.Error("faild", err)
-    } else {
-        t.Logf("update count = %d",r)
-    }
+	ins := []string{"آتش‌سوزی", "انسان", "شده", "MicroTugs"}
+	rnd := rand.Intn(100000)
+	r, err := NewTag_Updater().Name_In(ins).Count(rnd).CreatedTime_GE(125).Update(DB)
+	z, e := TagById(DB, 1)
+	if err != nil || r < 0 || e != nil || z.Count != rnd {
+		t.Error("faild", err)
+	} else {
+		t.Logf("update count = %d", r)
+	}
 }
 
 func TestUpdaterAll(t *testing.T) {
-    r, err := NewTag_Updater().IsBlocked(2).Update(DB)
-    z,e:=TagById(DB,1)
-    if err != nil || r < 0 || e != nil || z.IsBlocked != 2{
-        t.Error("faild", err)
-    } else {
-        //t.Logf("update count = %d, %v",r, z)
-    }
+	r, err := NewTag_Updater().IsBlocked(2).Update(DB)
+	z, e := TagById(DB, 1)
+	if err != nil || r < 0 || e != nil || z.IsBlocked != 2 {
+		t.Error("faild", err)
+	} else {
+		//t.Logf("update count = %d, %v",r, z)
+	}
 }
 
 ///////////////// Deleter ////////////////
 // deleter don't support queryies without where for safety
 
 func TestDeleteInsInt(t *testing.T) {
-    ins:= []int{11,12,13,14,15}
-    r, err := NewTag_Deleter().Id_In(ins).Count_LT(300).Delete(DB)
-    z,e:=TagById(DB,13)
-    if err != nil || r < 0 || e != nil || z.Id < 1{
-        t.Error("faild", err)
-    } else {
-        //t.Logf("update count = %d, %v",r, z)
-    }
+	ins := []int{11, 12, 13, 14, 15}
+	r, err := NewTag_Deleter().Id_In(ins).Count_LT(300).Delete(DB)
+	z, e := TagById(DB, 13)
+	if err != nil || r < 0 || e != nil || z.Id < 1 {
+		t.Error("faild", err)
+	} else {
+		//t.Logf("update count = %d, %v",r, z)
+	}
 }
 
 func TestDeleteId(t *testing.T) {
-    r, err := NewTag_Deleter().Id_EQ(20).Delete(DB)
-    z,e:=TagById(DB,13)
-    if err != nil || r < 0 || e != nil || z.Id < 1{
-        t.Error("faild", err)
-    } else {
-        //t.Logf("update count = %d, %v",r, z)
-    }
+	r, err := NewTag_Deleter().Id_EQ(20).Delete(DB)
+	z, e := TagById(DB, 13)
+	if err != nil || r < 0 || e != nil || z.Id < 1 {
+		t.Error("faild", err)
+	} else {
+		//t.Logf("update count = %d, %v",r, z)
+	}
 }
 
 func TestDeleteAll_NO(t *testing.T) {
-    r, err := NewTag_Deleter().Delete(DB)
-    z,e:=TagById(DB,13)
-    if err == nil || r > 0 || e != nil || z.Id < 1{
-        t.Error("faild", err)
-    } else {
-        //t.Logf("update count = %d, %v",r, z)
-    }
+	r, err := NewTag_Deleter().Delete(DB)
+	z, e := TagById(DB, 13)
+	if err == nil || r > 0 || e != nil || z.Id < 1 {
+		t.Error("faild", err)
+	} else {
+		//t.Logf("update count = %d, %v",r, z)
+	}
 }
 
 ////////////////////// Benchmarks //////////////////////
 func BenchmarkSelectSingleRow(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        UserById(DB,rand.Intn(80))
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		UserById(DB, rand.Intn(80))
+	}
 }
 
 func BenchmarkSelectSingleHand(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        getUser()
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		getUser()
+	}
 }
 
 func BenchmarkSelectSingSqlx(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        getUserSqlx()
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		getUserSqlx()
+	}
 }
 
 func BenchmarkSelectSingleRow_Tag(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        TagById(DB,rand.Intn(40))
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		TagById(DB, rand.Intn(40))
+	}
 }
 
 func BenchmarkSelectSingleHand_Tag(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        DB.QueryRow("select * frrom tags where Id = ? ",rand.Intn(40))
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		DB.QueryRow("select * frrom tags where Id = ? ", rand.Intn(40))
+	}
 }
 
 func BenchmarkSelectSingSqlx_Tag(b *testing.B) {
-    b.ResetTimer()
-    for i:=0 ;i< b.N; i++{
-        DB.QueryRow("select * frrom tags where Id = ? ",rand.Intn(40))
-    }
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		DB.QueryRow("select * frrom tags where Id = ? ", rand.Intn(40))
+	}
+}
+
+func BenchmarkSelectSingleRow_Post(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		PostById(DB, rand.Intn(40))
+	}
+}
+
+func BenchmarkSelectSingleHand_Post(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		DB.QueryRow("select * frrom post where Id = ? ", rand.Intn(40))
+	}
+}
+
+func BenchmarkSelectSingSqlx_Post(b *testing.B) {
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		DB.QueryRow("select * frrom post where Id = ? ", rand.Intn(40))
+	}
 }
 
 func getUser() {
-   DB.QueryRow("select * frrom user where Id = ? ",rand.Intn(80))
+	DB.QueryRow("select * frrom user where Id = ? ", rand.Intn(80))
 }
 
 func getUserSqlx() {
-    DB.Get(&User{},"select * frrom user where Id = ? ",rand.Intn(80))
+	DB.Get(&User{}, "select * frrom user where Id = ? ", rand.Intn(80))
 }
-
-
 
 func insrtComment(num int) {
 	for i := 1; i < num; i++ {

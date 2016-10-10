@@ -9,9 +9,14 @@ type XODB interface {
 }
 
 // XOLog provides the log func used by generated queries.
+var  _sqlLogFile *os.File
 var XOLog = func(strings ...interface{}) {
-	if DEBUG {
-		fmt.Println(strings...)
+	if config.IS_DEBUG {
+        if _sqlLogFile == nil{
+            _sqlLogFile,_ = os.OpenFile("./logs/sql_"+helper.IntToStr(helper.TimeNow())+".sql", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+        }
+        _sqlLogFile.WriteString(fmt.Sprintln(strings...))
+        _sqlLogFile.Sync()
 	}
  }
 

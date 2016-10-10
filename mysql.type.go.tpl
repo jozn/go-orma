@@ -7,7 +7,8 @@
 // {{ .Name }} represents a row from '{{ $table }}'.
 {{- end }}
 
-type {{ .Name }} struct {
+// Manualy copy this to project
+type __{{ .Name }} struct {
 {{- range .Fields }}
 	{{ .Col.ColumnName }} {{ retype .Type }} `json:"{{ .Col.ColumnName }}"` // {{ .Col.ColumnName }} -
 {{- end }}
@@ -217,6 +218,10 @@ func New{{ .Name }}_Selector()  *{{ $selectorType }} {
 {{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
 		{{ $operationType := . }}
 			////////ints
+func (u *{{$operationType}}) Or (ins []int) *{{$operationType}} {
+    u.whereSep = " OR "
+    return u
+}		
 		{{- range $Fields }}
 			
 			{{- $colName := .Col.ColumnName }}

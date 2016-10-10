@@ -8,7 +8,7 @@
 {{- end }}
 
 // Manualy copy this to project
-type __{{ .Name }} struct {
+type {{ .Name }} struct {
 {{- range .Fields }}
 	{{ .Col.ColumnName }} {{ retype .Type }} `json:"{{ .Col.ColumnName }}"` // {{ .Col.ColumnName }} -
 {{- end }}
@@ -610,6 +610,64 @@ func (d *{{$deleterType}})Delete (db XODB) (int,error) {
 
     return int(num),nil
 }
+
+///////////////////////// Mass insert - replace for  {{ .Name }} ////////////////
+func MassInsert_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
+	var err error
+	ln := len(rows)
+	s:= "({{ colnames .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
+	insVals_:= strings.Repeat(s, ln)
+	insVals := insVals_[0:len(insVals_)-1]
+	// sql query
+	sqlstr := "INSERT INTO {{ $table }} (" +
+		"{{ colnames .Fields .PrimaryKey.Name }}" +
+		") VALUES " + insVals
+
+	// run query
+	XOLog(sqlstr, " MassInsert len = ", ln)
+	vals := make([]interface{},0, ln * 5)//5 fields
+	
+	for _,row := range rows {
+		// vals = append(vals,row.UserId)
+		{{ ms_append_fieldnames .Fields "vals" .PrimaryKey.Name }}
+	} 
+
+	_, err = db.Exec(sqlstr, vals...)
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
+
+func MassReplace_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
+	var err error
+	ln := len(rows)
+	s:= "({{ colnames .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
+	insVals_:= strings.Repeat(s, ln)
+	insVals := insVals_[0:len(insVals_)-1]
+	// sql query
+	sqlstr := "REPLACE INTO {{ $table }} (" +
+		"{{ colnames .Fields .PrimaryKey.Name }}" +
+		") VALUES " + insVals
+
+	// run query
+	XOLog(sqlstr, " MassReplace len = ", ln)
+	vals := make([]interface{},0, ln * 5)//5 fields
+	
+	for _,row := range rows {
+		// vals = append(vals,row.UserId)
+		{{ ms_append_fieldnames .Fields "vals" .PrimaryKey.Name }}
+	} 
+
+	_, err = db.Exec(sqlstr, vals...)
+	if err != nil {
+		return err
+	}
+	
+	return nil
+}
+
 
 //////////////////// Play ///////////////////////////////
 {{- range $Fields }}

@@ -7,6 +7,7 @@ import (
 )
 
 var DB *sqlx.DB
+
 const DEBUG = false
 
 func main() {
@@ -26,7 +27,7 @@ func main() {
 }
 
 func play() {
-	for i := 0; i < 100; i++ {
+	/*for i := 0; i < 100; i++ {
 		p := Post{}
 		p.HasTag = []byte("as")
 		p.LikesCount = i
@@ -46,7 +47,7 @@ func play() {
 		if err != nil {
 			fmt.Println(err)
 		}
-	}
+	}*/
 }
 
 func update() {

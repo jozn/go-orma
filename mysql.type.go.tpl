@@ -8,7 +8,7 @@
 {{- end }}
 
 // Manualy copy this to project
-type {{ .Name }} struct {
+type __{{ .Name }} struct {
 {{- range .Fields }}
 	{{ .Col.ColumnName }} {{ retype .Type }} `json:"{{ .Col.ColumnName }}"` // {{ .Col.ColumnName }} -
 {{- end }}
@@ -615,7 +615,7 @@ func (d *{{$deleterType}})Delete (db XODB) (int,error) {
 func MassInsert_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
 	var err error
 	ln := len(rows)
-	s:= "({{ colnames .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
+	s:= "({{ ms_question_mark .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
 	insVals_:= strings.Repeat(s, ln)
 	insVals := insVals_[0:len(insVals_)-1]
 	// sql query
@@ -624,13 +624,14 @@ func MassInsert_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
 		") VALUES " + insVals
 
 	// run query
-	XOLog(sqlstr, " MassInsert len = ", ln)
 	vals := make([]interface{},0, ln * 5)//5 fields
 	
 	for _,row := range rows {
 		// vals = append(vals,row.UserId)
 		{{ ms_append_fieldnames .Fields "vals" .PrimaryKey.Name }}
 	} 
+
+	XOLog(sqlstr, " MassInsert len = ", ln, vals)
 
 	_, err = db.Exec(sqlstr, vals...)
 	if err != nil {
@@ -643,7 +644,7 @@ func MassInsert_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
 func MassReplace_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
 	var err error
 	ln := len(rows)
-	s:= "({{ colnames .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
+	s:= "({{ ms_question_mark .Fields .PrimaryKey.Name }})," //`(?, ?, ?, ?),`
 	insVals_:= strings.Repeat(s, ln)
 	insVals := insVals_[0:len(insVals_)-1]
 	// sql query
@@ -652,13 +653,14 @@ func MassReplace_{{ .Name }}(rows []{{ .Name }} ,db XODB) error {
 		") VALUES " + insVals
 
 	// run query
-	XOLog(sqlstr, " MassReplace len = ", ln)
 	vals := make([]interface{},0, ln * 5)//5 fields
 	
 	for _,row := range rows {
 		// vals = append(vals,row.UserId)
 		{{ ms_append_fieldnames .Fields "vals" .PrimaryKey.Name }}
 	} 
+
+	XOLog(sqlstr, " MassReplace len = ", ln , vals)
 
 	_, err = db.Exec(sqlstr, vals...)
 	if err != nil {

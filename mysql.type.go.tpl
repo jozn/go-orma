@@ -434,7 +434,7 @@ func (u *{{$selectorType}})_stoSql ()  (string,[]interface{}) {
         sqlstr += " LIMIT " + strconv.Itoa(u.limit) 
     }
 
-    if u.limit != 0 {
+    if u.offset != 0 {
         sqlstr += " OFFSET " + strconv.Itoa(u.offset)
     }	
     return sqlstr,whereArgs

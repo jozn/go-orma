@@ -373,7 +373,7 @@ func (u *{{$updaterType}}){{ $colName }}_Increment (count int) *{{$updaterType}}
 	}
 
 	if count < 0 {
-		u.updates[" {{$colName}} = {{$colName}}-? "] = count
+		u.updates[" {{$colName}} = {{$colName}}-? "] = -(count) //make it positive
 	}
     
     return u

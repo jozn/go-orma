@@ -365,7 +365,19 @@ func (d *{{$operationType}}) {{ $colName }}{{ .Suffix }} (val string) *{{$operat
 func (u *{{$updaterType}}){{ $colName }} (newVal int) *{{$updaterType}} {
     u.updates[" {{$colName}} = ? "] = newVal
     return u
-}			
+}
+
+func (u *{{$updaterType}}){{ $colName }}_Increment (count int) *{{$updaterType}} {
+	if count > 0 {
+		u.updates[" {{$colName}} = {{$colName}}+? "] = count
+	}
+
+	if count < 0 {
+		u.updates[" {{$colName}} = {{$colName}}-? "] = count
+	}
+    
+    return u
+}				
 	{{- end }}
 
 	//string

@@ -218,7 +218,7 @@ func New{{ .Name }}_Selector()  *{{ $selectorType }} {
 {{ range (ms_to_slice $deleterType $updaterType $selectorType) }}
 		{{ $operationType := . }}
 			////////ints
-func (u *{{$operationType}}) Or (ins []int) *{{$operationType}} {
+func (u *{{$operationType}}) Or () *{{$operationType}} {
     u.whereSep = " OR "
     return u
 }		
@@ -466,6 +466,8 @@ func (u *{{$selectorType}}) GetRow (db *sqlx.DB) (*{{ $typ }},error) {
 		return nil, err
 	}
 
+	row._exists = true
+
 	return row, nil
 }
 
@@ -481,6 +483,10 @@ func (u *{{$selectorType}}) GetRows (db *sqlx.DB) ([]{{ $typ }},error) {
 	err = db.Unsafe().Select(&rows ,sqlstr, whereArgs...)
 	if err != nil {
 		return nil, err
+	}
+
+	for i:=0;i< len(rows);i++ {
+		rows[i]._exists = true
 	}
 
 	return rows, nil
